@@ -331,44 +331,40 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 		// Gelen komutun (rx_buffer) ASCII değerine göre analiz yapılması
 		switch (rx_buffer) {
 		case '1':
-			if (servo_1_pwm < 2000)
-				servo_1_pwm += 100;
-			HAL_UART_Transmit(&huart2, (uint8_t*) "Servo_1 sola gitti\n", 19,
-					100);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, servo_1_pwm);
-			break;
+		    if (servo_1_pwm < 2000) servo_1_pwm += 100;
+		    HAL_UART_Transmit(&huart2, (uint8_t*)"1\n", 2, 100);
+		    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, servo_1_pwm);
+		    break;
 
 		case '2':
-			if (servo_1_pwm > 1000)
-				servo_1_pwm -= 100;
-			HAL_UART_Transmit(&huart2, (uint8_t*) "Servo_1 saga gitti\n", 19,
-					100);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, servo_1_pwm);
-			break;
+		    if (servo_1_pwm > 1000) servo_1_pwm -= 100;
+		    HAL_UART_Transmit(&huart2, (uint8_t*)"2\n", 2, 100);
+		    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, servo_1_pwm);
+		    break;
 
 		case '3':
-			if (servo_2_pwm < 2000)
-				servo_2_pwm += 100;
-			HAL_UART_Transmit(&huart2, (uint8_t*) "Servo_2 sola gitti\n", 19,
-					100);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, servo_2_pwm);
-			break;
+		    if (servo_2_pwm < 2000) servo_2_pwm += 100;
+		    HAL_UART_Transmit(&huart2, (uint8_t*)"3\n", 2, 100);
+		    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, servo_2_pwm);
+		    break;
 
 		case '4':
-			if (servo_2_pwm > 1000)
-				servo_2_pwm -= 100;
-			HAL_UART_Transmit(&huart2, (uint8_t*) "Servo_2 saga gitti\n", 19,
-					100);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, servo_2_pwm);
-			break;
+		    if (servo_2_pwm > 1000) servo_2_pwm -= 100;
+		    HAL_UART_Transmit(&huart2, (uint8_t*)"4\n", 2, 100);
+		    __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, servo_2_pwm);
+		    break;
 
 		case 'L':
-			HAL_GPIO_TogglePin(LAZER_SIGNAL_GPIO_Port, LAZER_SIGNAL_Pin);
-			break;
+		    HAL_GPIO_TogglePin(LAZER_SIGNAL_GPIO_Port, LAZER_SIGNAL_Pin);
+		    if (HAL_GPIO_ReadPin(LAZER_SIGNAL_GPIO_Port, LAZER_SIGNAL_Pin))
+		        HAL_UART_Transmit(&huart2, (uint8_t*)"L1\n", 3, 100);
+		    else
+		        HAL_UART_Transmit(&huart2, (uint8_t*)"L0\n", 3, 100);
+		    break;
 
-		default: // Bilinmeyen Komut
-			HAL_UART_Transmit(&huart2, (uint8_t*) "Hatali Komut\n", 13, 100);
-			break;
+		default:
+		    HAL_UART_Transmit(&huart2, (uint8_t*)"E\n", 2, 100);
+		    break;
 		}
 
 		// İşlemciyi bir sonraki gelecek byte için tekrar dinleme moduna al (huart2)
@@ -378,14 +374,31 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
 
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    if (GPIO_Pin == LDR1_Pin || GPIO_Pin == LDR2_Pin) {
 
+    if (GPIO_Pin == LDR1_Pin) {
         if ((HAL_GPIO_ReadPin(LAZER_SIGNAL_GPIO_Port, LAZER_SIGNAL_Pin) == GPIO_PIN_SET) &&
-            (HAL_GPIO_ReadPin(GPIOA, GPIO_Pin) == GPIO_PIN_SET)) {
+            (servo_1_pwm == 1500)) {
 
-            HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
+            if (HAL_GPIO_ReadPin(GPIOA, LDR1_Pin) == GPIO_PIN_SET) {
+                HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
+            } else {
+                HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
+            }
         } else {
+            HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
+        }
+    }
 
+    if (GPIO_Pin == LDR2_Pin) {
+        if ((HAL_GPIO_ReadPin(LAZER_SIGNAL_GPIO_Port, LAZER_SIGNAL_Pin) == GPIO_PIN_SET) &&
+            (servo_2_pwm == 1500)) {
+
+            if (HAL_GPIO_ReadPin(GPIOA, LDR2_Pin) == GPIO_PIN_SET) {
+                HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
+            } else {
+                HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
+            }
+        } else {
             HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
         }
     }
